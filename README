@@ -1,0 +1,71 @@
+# Instructions for running the training script
+
+
+Requirements
+====
+
+*	[Python (>= 3.6)](https://www.python.org/downloads)
+
+*	[Tensorflow (2.8.0)](https://pypi.org/project/tensorflow)
+
+```bash
+pip install tensorflow-gpu==2.8
+```
+
+*	[BioPython](https://biopython.org/) 
+
+```bash
+pip install biopython
+```
+
+*	[training set (available at our website)](https://yanglab.nankai.edu.cn/trRosetta/benchmark) 
+
+	Just download the npz file which is 21G and extract it to ./training_set/npz
+
+
+
+Usage
+====
+
+script1. run_train.py
+	
+	Training script for Res2Net_FM network. 
+		
+	An example:
+	
+		```
+		python run_train.py -npz ./training_set/npz/ -model models/tr_res2net_v2 -gpu 0
+		```
+
+	args:
+		> -npz         (input) path to NPZ files of training set
+		> -model           (output) path to store ckpt files
+		> -gpu         use which GPU (default:0)
+		
+	
+	Notes:
+		1.Training set must be in npz format. 
+			The npz files of training set used in our paper are already available at our website.
+			If new training samples are needed, one should run `label_calcu.py` to generate npz files from A3M and PDB files.
+		2.The training process uses ~11G GPU memory and takes ~3hours on a 2080ti GPU for one epoch. 
+		3.The training script employs early stopping method and the learning rate keeps droping during training.
+		4.Every epoch's checkpoint will be saved to out_pth, so one can stop and recover training at any epoch if necessary.
+		5.Hyparameters such as learning rate, num of layers and early stopping can be adjusted manually in `config.ini`
+		
+
+script2. label_calcu.py
+
+	Generate npz files storing msa and ground-truth inter-residue geometries extracted from training set A3M and PDB files.
+	
+	An example:
+	
+		```
+		python label_calcu.py -a3m ../training_set/a3m/ -pdb ../training_set/a3m/ -o ../training_set/npz/ -cpu 2
+		```
+		
+	args:
+		> -a3m         (input) path to A3M files of training set
+		> -pdb         (input) path to PDB files of training set
+		> -o           (output) path to store npz files
+		> -cpu         number of CPUs to use (default:2)
+		
