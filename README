@@ -8,15 +8,15 @@ Requirements
 
 *	[Tensorflow (2.8.0)](https://pypi.org/project/tensorflow)
 
-```bash
-pip install tensorflow-gpu==2.8
-```
+	```
+	pip install tensorflow-gpu==2.8
+	```
 
 *	[BioPython](https://biopython.org/) 
 
-```bash
-pip install biopython
-```
+	```
+	pip install biopython
+	```
 
 *	[training set (available at our website)](https://yanglab.nankai.edu.cn/trRosetta/benchmark) 
 
