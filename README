@@ -20,7 +20,7 @@ Requirements
 
 *	[training set (available at our website)](https://yanglab.nankai.edu.cn/trRosetta/benchmark) 
 
-	Just download the npz file which is 21G and extract it to ./training_set/npz
+	Just download the npz file which is 21G and extract it to ./training_set/npz QwQ
 
 
 
@@ -34,7 +34,7 @@ script1. run_train.py
 	An example:
 	
 		```
-		python run_train.py -npz ./training_set/npz/ -model models/tr_res2net_v2 -gpu 0
+		python run_train.py -npz ./training_set/npz/ -model ./models/tr_res2net_v2 -gpu 0
 		```
 
 	args:
@@ -55,12 +55,12 @@ script1. run_train.py
 
 script2. label_calcu.py
 
-	Generate npz files storing msa and ground-truth inter-residue geometries extracted from training set A3M and PDB files.
+	Generate npz files storing msa and ground-truth inter-residue geometries extracted from training set A3M and PDB files.(recommend download a3m files for TrRosettaX from website)
 	
 	An example:
 	
 		```
-		python label_calcu.py -a3m ../training_set/a3m/ -pdb ../training_set/a3m/ -o ../training_set/npz/ -cpu 2
+		python label_calcu.py -a3m ./training_set/cameo_a3m/ -pdb ./training_set/cameo_a3m/ -o ./training_set/cameo_npz/ -cpu 2
 		```
 		
 	args:

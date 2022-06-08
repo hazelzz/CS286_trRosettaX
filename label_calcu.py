@@ -111,13 +111,16 @@ def parse_pdb_6d(pid, a3m_file, pdb_file, save_pth):
     else:
         residues = [res for res in chain.child_list if PDB.is_aa(res) and 'CB' in res and 'N' in res]
 
+    msa = parse_a3m(a3m_file, limit=30000)
+
+    if not msa.shape[1]==len(residues):
+        return
+
     if len(residues) > 260:
         os.makedirs(save_pth, exist_ok=True)
         with open(f'{save_pth}/long_list_all', 'a') as f:
             f.write(f'{pid}_long\n')
-
-    msa = parse_a3m(a3m_file, limit=30000)
-
+    
     # 6D coordinates
     dist, omega, theta_asym, phi_asym = get_neighbors(residues, 20)
 
@@ -126,7 +129,19 @@ def parse_pdb_6d(pid, a3m_file, pdb_file, save_pth):
         'dist': dist, 'omega': omega,
         'theta_asym': theta_asym, 'phi_asym': phi_asym
     }
-    print(labels)
+
+    print()
+    print('pid:',pid)
+    print('msa:',msa.shape)
+    print('dist:',dist.shape)
+    print('omega:',omega.shape)
+    print('theta_asym:',theta_asym.shape)
+    print('phi_asym:',phi_asym.shape)
+    print('residues:',len(residues))
+
+    print()
+
+
     np.savez_compressed(f'{save_pth}/{pid}.npz', **labels)
 
 
