@@ -90,6 +90,7 @@ def main():
             nrow = tf.compat.v1.placeholder(dtype=tf.int32, shape=(), name='nrow')
             n_sub = tf.compat.v1.placeholder(dtype=tf.int32, shape=(), name='n_sub')
             msa = tf.compat.v1.placeholder(dtype=tf.uint8, shape=(None, None, None), name='msa')
+            RRCS = tf.placeholder(dtype=tf.uint8, shape=(None, None), name='RRCS')
             learning_rate_decay = tf.compat.v1.placeholder(shape=(), dtype=tf.float32, name='learning_rate_decay')
 
             theta = tf.compat.v1.placeholder(dtype=tf.int32, shape=(None, None, None))
@@ -103,7 +104,8 @@ def main():
             y_phi = tf.one_hot(phi, n_bins['phi'])
             y_omega = tf.one_hot(omega, n_bins['omega'])
 
-            def collect_features(msa_sample):
+            def collect_features(sample):
+                msa_sample, RRCS_sample = sample
                 msa1hot = tf.one_hot(msa_sample, ns, dtype=tf.float32)
                 w = reweight(msa1hot, wmin)
 
@@ -122,10 +124,11 @@ def main():
                 f2d = tf.concat([tf.tile(f1d[:, :, None, :], [1, 1, ncol, 1]),
                                  tf.tile(f1d[:, None, :, :], [1, ncol, 1, 1]),
                                  f2d_dca], axis=-1)
-                return tf.reshape(f2d, [ncol, ncol, 442 + 2 * 42])
+                f2d = tf.reshape(f2d, [ncol, ncol, 442 + 2 * 42])
+                f2d_rrcs = tf.concat([f2d, tf.tile(RRCS_sample[:, None, None], [1, ncol, 1])], axis=-1)
+                return f2d_rrcs
 
-            f2d = tf.map_fn(lambda x: collect_features(x), msa, dtype=tf.float32)
-
+            f2d = tf.map_fn(lambda x: collect_features(x), (msa, tf.to_float(RRCS)), dtype=tf.float32)
         with tf.compat.v1.name_scope('network'):
             # res2net = Res2Net(reg_rate=reg).forward
             model = Res2Net(reg_rate=reg)
@@ -182,9 +185,10 @@ def main():
             n_OOM_, min_OOM_shape_ = 0, np.inf
 
             for i, pid in enumerate(val_set):
-                npz_file = f'{npz_pth}/{pid}.npz'
+                npz_file = f'{npz_pth}/{pid}.npy'
                 npz = np.load(npz_file)
                 a3m = npz['msa'][:20000, :]
+                rrcs = npz['rrcs'][None, ...]
                 theta_ = npz['theta_asym'][None, ...]
                 phi_ = npz['phi_asym'][None, ...]
                 dist_ = npz['dist'][None, ...]
@@ -197,6 +201,7 @@ def main():
                 try:
                     pred_dist, loss_, dist_loss_ = sess.run([softmax_distance, total_loss, distance_loss], options=opt,
                                                             feed_dict={msa: a3m,
+                                                                       RRCS: rrcs,
                                                                        ncol: a3m.shape[-1], nrow: a3m.shape[-2], n_sub: 1,
                                                                        theta: tbin, phi: pbin,
                                                                        distance: dbin, omega: obin,
@@ -226,7 +231,7 @@ def main():
             print('warning: long_list_all missed!')
 
         # split samples for training, validation
-        files_list = [f.split('.')[0] for f in os.listdir(npz_pth) if f.endswith('.npz')]
+        files_list = [f.split('.')[0] for f in os.listdir(npz_pth) if f.endswith('.npy')]
         if init_epoch == 0:
             val_set = random.sample(files_list, int(len(files_list) * hyparams['val_prop']))
             with open(f'{output_pth}/val_list_{str(datetime.now().date())}', 'w') as f:
@@ -279,8 +284,8 @@ def main():
                 for i, pid in enumerate(train_sample):
                     # continue
                     with tf.device('/CPU:0'):
-                        npz_file = f'{npz_pth}/{pid}.npz'
-                        a3m, theta_, phi_, dist_, omega_ = read_single_file_train(npz_file, cutoff=int(hyparams['cutoff']))
+                        npz_file = f'{npz_pth}/{pid}.npy'
+                        a3m, rrcs, theta_, phi_, dist_, omega_ = read_single_file_train(npz_file, cutoff=int(hyparams['cutoff']))
 
                         dist_, omega_, theta_, phi_ = binning(dist_, omega_, theta_, phi_)
                         
@@ -293,6 +298,7 @@ def main():
                             options=opt,
                             feed_dict={
                                 msa: a3m,
+                                RRCS:rrcs,
                                 ncol: a3m.shape[-1],
                                 nrow: a3m.shape[-2],
                                 n_sub: a3m.shape[0],
@@ -356,7 +362,7 @@ validation: val_loss:{val_loss:.3f}(dist_loss:{val_dist_loss}) long-range top L 
                     break
             # save best epoch
             saver.save(session, output_pth + '/' + model_name)
-            saver.restore(session, f'{output_pth}/checkpoint_dir/epoch_{best_epoch}')
+            saver.restore(session, f'{output_pth}/cp_dir/epoch_{best_epoch}')
             print('--------------------------------train end---------------------------------------')
 
 

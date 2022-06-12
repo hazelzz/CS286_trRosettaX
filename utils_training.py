@@ -131,6 +131,7 @@ def read_single_file_train(*input_files, cutoff=260, frac=130, msa_subsample=Tru
 
     label = np.load(npz.replace('_long', ''))
     a3m = label['msa']
+    rrcs = label['rrcs']
     theta_ = label['theta_asym']
     phi_ = label['phi_asym']
     dist_ = label['dist']
@@ -166,6 +167,7 @@ def read_single_file_train(*input_files, cutoff=260, frac=130, msa_subsample=Tru
             omega_ = np.expand_dims(omega_[ind][:, ind], axis=0)
             phi_ = np.expand_dims(phi_[ind][:, ind], axis=0)
             a3m = np.expand_dims(a3m[:, ind], axis=0)
+            rrcs = np.expand_dims(rrcs[ind], axis=0)
             if temp_npz is not None:
                 theta_temp_ = theta_temp_[:, ind][:, :, ind]
                 dist_temp_ = dist_temp_[:, ind][:, :, ind]
@@ -180,6 +182,7 @@ def read_single_file_train(*input_files, cutoff=260, frac=130, msa_subsample=Tru
             dist_ = np.array([dist_[start_:start_ + len_, start_:start_ + len_]])
             omega_ = np.array([omega_[start_:start_ + len_, start_:start_ + len_]])
             a3m = np.array([a3m[:, start_:start_ + len_]])
+            rrcs = np.array([rrcs[start_:start_ + len_]])
 
             if temp_npz is not None:
                 theta_temp_ = theta_temp_[:, start_:start_ + len_, start_:start_ + len_]
@@ -193,8 +196,9 @@ def read_single_file_train(*input_files, cutoff=260, frac=130, msa_subsample=Tru
         omega_ = np.array([omega_])
 
         a3m = np.array([a3m])
+        rrcs = np.array([rrcs])
 
-    out = [a3m, theta_, phi_, dist_, omega_]
+    out = [a3m, rrcs, theta_, phi_, dist_, omega_]
     if temp_npz is not None:
         out += [theta_temp_, phi_temp_, dist_temp_, omega_temp_]
 

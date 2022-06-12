@@ -9,6 +9,8 @@ from pathlib import Path
 
 from Bio.PDB import calc_dihedral, calc_angle
 from argparse import ArgumentParser
+from RRCS.RRCS import calc_contact
+import random
 
 from utils_training import parse_a3m
 from collections import defaultdict
@@ -121,11 +123,26 @@ def parse_pdb_6d(pid, a3m_file, pdb_file, save_pth):
         with open(f'{save_pth}/long_list_all', 'a') as f:
             f.write(f'{pid}_long\n')
     
+    #calculate RRCS
+    contact = calc_contact(pdb_file)
+    rrcs = []
+    for a_res in contact:
+        b_res_list = contact[a_res].keys()
+        for b_res in b_res_list:
+            score = contact[a_res][b_res]
+            if score > 0:
+                rrcs.append(score)
+    rrcs = random.sample(rrcs, len(residues))
+    if len(rrcs)<len(residues):
+        for i in range(len(residues)-len(rrcs)): 
+            rrcs.append(0) 
+    rrcs = np.array(rrcs)
+
     # 6D coordinates
     dist, omega, theta_asym, phi_asym = get_neighbors(residues, 20)
 
     labels = {
-        'msa': msa,
+        'msa': msa, 'rrcs':rrcs,
         'dist': dist, 'omega': omega,
         'theta_asym': theta_asym, 'phi_asym': phi_asym
     }
@@ -133,6 +150,7 @@ def parse_pdb_6d(pid, a3m_file, pdb_file, save_pth):
     print()
     print('pid:',pid)
     print('msa:',msa.shape)
+    print('rrcs:',rrcs.shape)
     print('dist:',dist.shape)
     print('omega:',omega.shape)
     print('theta_asym:',theta_asym.shape)
@@ -142,7 +160,7 @@ def parse_pdb_6d(pid, a3m_file, pdb_file, save_pth):
     print()
 
 
-    np.savez_compressed(f'{save_pth}/{pid}.npz', **labels)
+    np.savez_compressed(f'{save_pth}/{pid}.npy', **labels)
 
 
 if __name__ == '__main__':
